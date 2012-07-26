@@ -1,0 +1,9 @@
+name = Custom Module 1
+description = Alters Mailchimp form in colorbox modal window.
+core = 7.x
+dependencies[] = colorbox
+dependencies[] = colorbox_node
+dependencies[] = mailchimp
+
+version = "7.x"
+core = "7.x"

@@ -1,0 +1,159 @@
+<?php
+/*******************************
+ * DRUPAL HOOKS
+ *******************************/
+/**
+ * Implements hook_menu()
+ */ 
+function cm1_menu() {
+	$items['admin/structure/cm1'] = array(
+		'title' => 'CM1 Settings',
+		'description' => 'Configure layout of mailchimp form in modal pop-up window.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('cm1_settings_form'),
+		'access arguments' => array('access cm1 settings'),
+	);
+	$items['subscribe'] = array(
+		'title' => 'Stay Informed',
+		'page callback' => 'theme',
+		'page arguments' => array('cm1_subscribe'),
+		'access callback' => TRUE,
+	);
+	
+	return $items;
+}
+ 
+/**
+ * Implements hook_form_alter()
+ */
+function cm1_form_alter(&$form, &$form_state, $form_id) {
+	if (strpos($form_id, 'mailchimp_lists_user_subscribe_form') !== FALSE) {
+			$wrapperid = "ajax-wrapper-$form_id";
+			$form['#prefix'] = "<div id=\"$wrapperid\">";
+			$form['#suffix'] = "</div>";
+			$form['submit']['#ajax']['callback'] = "cm1_mailchimp_ajax";
+			$form['submit']['#ajax']['wrapper'] = $wrapperid;
+      if (isset($_GET['modal']) && $_GET['modal']) {
+  			$form['#theme'] = "cm1_initialstate";
+  			$form['#prefix'] = "<div id=\"modal-$wrapperid\">";
+  			$form['submit']['#ajax']['wrapper'] = "modal-$wrapperid";
+        $form['modal']['#type'] = 'hidden';
+      }
+      // dpm($form);
+	}
+}
+
+/**
+ * Implements hook_theme
+ */
+function cm1_theme($existing, $type, $theme, $path) {
+	return array(
+		'cm1_subscribe' => array(
+	      'variables' => array(),
+    ),
+		'cm1_initialstate' => array(
+	      'render element' => 'form',
+	      'template' => 'cm1-initialstate',
+    ),
+		'cm1_invalidemail' => array(
+	      'render element' => 'form',
+	      'template' => 'cm1-invalidemail',
+    ),
+		'cm1_alreadysignedup' => array(
+	      'render element' => 'form',
+	      'template' => 'cm1-alreadysignedup',
+    ),
+		'cm1_success' => array(
+	      'render element' => 'form',
+	      'template' => 'cm1-success',
+    ),
+	);
+}
+
+/**********************************
+ * PREPROCESSING
+ *********************************/
+/**
+ * Implements MYMODULE_preprocess()
+ */
+function cm1_preprocess_link(&$vars) {
+  if ($vars['path'] == "subscribe") {
+    $vars['options']['query'] = array(
+      'width'=>600,
+      'height'=>300,
+      'modal'=>TRUE,
+      'iframe'=>TRUE,
+    );
+    $vars['options']['attributes']['class'][] = 'colorbox-node';
+    $vars['options']['attributes']['class'][] = 'subscribe';
+  }
+}
+ 
+/********************************
+ * HELPER FUNCTIONS
+ ********************************/
+/**
+ * mailchimp ajax callback
+ */
+function cm1_mailchimp_ajax($form, $form_state) {
+  // The form has already been submitted and updated.
+  if (isset($form['modal'])) {
+    $messages = theme('status_messages',array('display'=>'status'));
+	  if(count(drupal_get_messages('error'))) {
+	    $form['#theme'] = 'cm1_invalidemail';
+	  } elseif (strstr($messages,'There was a problem with your newsletter signup')) {
+	    $form['#theme'] = 'cm1_invalidemail';
+	  } elseif (strstr($messages, 'You have updated your settings in')) {
+	    $form['#theme'] = 'cm1_alreadysignedup';
+	  } else {
+	    $form['#theme'] = 'cm1_success';
+	  }
+	} else {
+	  $id = substr($form['form_id']['#value'], strlen('mailchimp_lists_user_subscribe_form_'));
+	  $form['mailchimp_lists']["mailchimp_$id"]['title']['#markup'] .= '<div class="mail-alert">'.theme('status_messages').'</div>';
+  }
+  return $form;
+}
+/**
+ * settings form
+ */
+function cm1_settings_form($form_state) {
+	$html = '<a class="colorbox-node" href="/subscribe?width=800&height=600&modal=true&iframe=true">Stay Informed</a>';
+	$form['help1'] = array(
+		'#type' => 'item',
+		'#title' => t('Example popup link'),
+		'#markup' => t('Your link should look like this:<br />@link',array('@link'=>$html)),
+	);
+	$options = array();
+  if ($lists = mailchimp_lists_load_multiple_by_name()) {
+    foreach (array_keys($lists) as $k) {
+      $options[$k] = $k;
+    }
+  }
+	$form['cm1_settings_listname'] = array(
+		'#title' => t('List Name'),
+		'#description' => t("Select the name of the mailchimp list. The subscibe form for this mailchimp list will be altered."),
+		'#type' => 'select',
+		'#options' => $options,
+		'#default_value' => variable_get('cm1_settings_listname'),
+		'#required' => TRUE,
+	);
+	
+	return system_settings_form($form);
+}
+
+/********************************
+ * THEME FUNCTIONS
+ ********************************/
+/**
+ * theme cm1_subscribe
+ */
+function theme_cm1_subscribe($vars) {
+	$output = '';
+	
+	if ($listname = variable_get('cm1_settings_listname')) {
+    $output .=  drupal_render(mailchimp_lists_block_view($listname)); 
+	}
+	
+	return "<div id=\"cmd1-subscribe-form\">$output</div>";
+}

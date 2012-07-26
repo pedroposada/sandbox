@@ -1,0 +1,6 @@
+name = Custom Module 2
+description = Redirect mobile device to m.domain, set cookie to remember domain option.
+core = 7.x
+
+version = "7.x"
+core = "7.x"
