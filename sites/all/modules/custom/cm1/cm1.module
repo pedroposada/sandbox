@@ -28,18 +28,17 @@ function cm1_menu() {
  */
 function cm1_form_alter(&$form, &$form_state, $form_id) {
 	if (strpos($form_id, 'mailchimp_lists_user_subscribe_form') !== FALSE) {
-			$wrapperid = "ajax-wrapper-$form_id";
-			$form['#prefix'] = "<div id=\"$wrapperid\">";
-			$form['#suffix'] = "</div>";
-			$form['submit']['#ajax']['callback'] = "cm1_mailchimp_ajax";
-			$form['submit']['#ajax']['wrapper'] = $wrapperid;
-      if (isset($_GET['modal']) && $_GET['modal']) {
-  			$form['#theme'] = "cm1_initialstate";
-  			$form['#prefix'] = "<div id=\"modal-$wrapperid\">";
-  			$form['submit']['#ajax']['wrapper'] = "modal-$wrapperid";
-        $form['modal']['#type'] = 'hidden';
-      }
-      // dpm($form);
+		$wrapperid = "ajax-wrapper-$form_id";
+		$form['#prefix'] = "<div id=\"$wrapperid\">";
+		$form['#suffix'] = "</div>";
+		$form['submit']['#ajax']['callback'] = "cm1_mailchimp_ajax";
+		$form['submit']['#ajax']['wrapper'] = $wrapperid;
+	  if (isset($_GET['modal']) && $_GET['modal']) {
+			$form['#theme'] = "cm1_initialstate";
+			$form['#prefix'] = "<div id=\"modal-$wrapperid\">";
+			$form['submit']['#ajax']['wrapper'] = "modal-$wrapperid";
+	    $form['modal']['#type'] = 'hidden';
+	  }
 	}
 }
 
@@ -110,7 +109,11 @@ function cm1_mailchimp_ajax($form, $form_state) {
 	  }
 	} else {
 	  $id = substr($form['form_id']['#value'], strlen('mailchimp_lists_user_subscribe_form_'));
-	  $form['mailchimp_lists']["mailchimp_$id"]['title']['#markup'] .= '<div class="mail-alert">'.theme('status_messages').'</div>';
+		$msg = '<div class="mail-alert">'.theme('status_messages').'</div>';
+		if (isset($form['mailchimp_lists']["mailchimp_$id"]['mergevars']['EMAIL'])) {
+			$form['mailchimp_lists']["mailchimp_$id"]['mergevars']['EMAIL']['#prefix'] = $msg;
+		}
+	  // $form['mailchimp_lists']["mailchimp_$id"]['title']['#markup'] .= '<div class="mail-alert">'.theme('status_messages').'</div>';
   }
   return $form;
 }

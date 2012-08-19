@@ -79,9 +79,7 @@ function cm2_boot() {
   }
   // if redirect (either the value of the mobile or desktop redirect depending on the value of $is_mobile_browser) is TRUE redirect else we return the status of $is_mobile_browser
   if ($simplemobileredirect) {
-    // header("Location: http://$simplemobileredirect/{$_GET['q']}", TRUE, 302);
-    // redirect to homepage only
-    header("Location: http://$simplemobileredirect", TRUE, 302);
+    header("Location: http://$simplemobileredirect/{$_GET['q']}", TRUE, 302);
     exit;
   }
 }
@@ -130,9 +128,7 @@ function _cm2_redirect($type) {
 	}
 	// actual redirection
 	if ($url) {
-		// header("Location: http://$url$newpath", TRUE, 302);
-		// redirect to homepage only
-		header("Location: http://$url", TRUE, 302);
+		header("Location: http://$url$newpath", TRUE, 302);
 	} else {
 		header("Location: {$GLOBALS['base_url']}", TRUE, 302);
 	}
